@@ -18,7 +18,7 @@
     <ClCompile Include="Serial.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parallel.c">
+    <ClCompile Include="Parallel.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,3 +1,5 @@
+/*
+
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
 #include <stdio.h> // Standard Input Output
 #include <stdlib.h> // Standard Library
@@ -139,11 +141,11 @@ int main() {
     const int K = 4;
 
     // Source and destination nodes
-    int srcNode = 1;
-    int destNode = 3;
+    int srcNode = 0;
+    int destNode = 20000;
 
     // Reading the graph from a file
-    FILE* fp = fopen("datasets/test2.txt", "r");
+    FILE* fp = fopen("datasets/Email-Enron.txt", "r");
     if (fp == NULL) {
         printf("Error opening file.\n");
         return 1;
@@ -191,10 +193,11 @@ int main() {
     //    printf("%d %d %d\n", edges[i][0], edges[i][1], edges[i][2]);
     //}
 
-    printf("\nFile Reading Done");
+    printf("\nFile Reading Done\n");
     printf("K shortest paths from %d to %d are: ", srcNode, destNode);
     // Find K shortest paths => Function Call
     findKShortest(edges, N, M, K, srcNode, destNode);
+    printf("\nDone");
 
     free(edges);
 
@@ -203,3 +206,7 @@ int main() {
 
 // Time Complexity : O((N + M)* KlogK)
 // Auxiliary Space : O(NK)
+
+
+
+*/
