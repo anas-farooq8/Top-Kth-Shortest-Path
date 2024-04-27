@@ -133,6 +133,9 @@
     <ClCompile Include="Parallel.c" />
     <ClCompile Include="Serial.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="functions.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

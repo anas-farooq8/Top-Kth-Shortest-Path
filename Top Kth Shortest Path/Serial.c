@@ -1,138 +1,9 @@
 /*
 
+
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
-#include <stdio.h> // Standard Input Output
-#include <stdlib.h> // Standard Library
-
-// Structure to represent a node in the graph
-struct Node {
-    int dest; // Destination node
-    int cost; // Cost of the edge
-    struct Node* next; // Pointer to the next node
-};
-
-// Function to create a new node
-struct Node* createNode(int dest, int cost) {
-    // Allocating memory for the new node
-    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-
-    newNode->dest = dest;
-    newNode->cost = cost;
-    newNode->next = NULL;
-    return newNode;
-}
-
-// Function to find K shortest path lengths
-void findKShortest(int edges[][3], int n, int m, int k, int srcNode, int destNode) {
-    // Initialize graph
-    struct Node** g = (struct Node**)malloc((n + 1) * sizeof(struct Node*));
-    // Initialize adjacency list
-    for (int i = 0; i <= n; i++) {
-        g[i] = NULL; // Initialize all nodes to NULL
-    }
-
-    // Storing edges
-    for (int i = 0; i < m; i++) {
-        int src = edges[i][0];
-        int dest = edges[i][1];
-        int cost = edges[i][2];
-        struct Node* newNode = createNode(dest, cost);
-        newNode->next = g[src]; // Adding the new node to the adjacency list
-        g[src] = newNode; // Updating the adjacency list
-    }
-
-    // Initialize distance array
-    int** dis = (int**)malloc((n + 1) * sizeof(int*));
-    for (int i = 0; i <= n; i++) {
-        dis[i] = (int*)malloc(k * sizeof(int));
-        for (int j = 0; j < k; j++) {
-            dis[i][j] = 1e9;
-        }
-    }
-
-    // Initialization of priority queue
-    typedef struct {
-        int first;
-        int second;
-    } pair;
-
-    // Priority queue
-    pair* pq = (pair*)malloc(n * n * sizeof(pair));
-    int pq_size = 0; // Size of the priority queue
-    pq[pq_size++] = (pair){ 0, srcNode };
-    dis[srcNode][0] = 0; // Distance of the source node is 0
-
-    // while pq has elements
-    while (pq_size > 0) {
-        // Storing the node value
-        int u = pq[0].second; // Node value
-        int d = pq[0].first; // Distance value
-
-        for (int i = 0; i < pq_size - 1; i++) {
-            pq[i] = pq[i + 1];
-        }
-        pq_size--;
-
-        // Checking for the distance
-        if (dis[u][k - 1] < d)
-            continue;
-        struct Node* current = g[u];
-
-        // Traversing the adjacency list
-        while (current != NULL) {
-            int dest = current->dest;
-            int cost = current->cost;
-
-            // Checking for the cost
-            if (d + cost < dis[dest][k - 1]) {
-                dis[dest][k - 1] = d + cost;
-
-                // Sorting the distances
-                for (int i = 0; i < k; i++) {
-                    for (int j = i + 1; j < k; j++) {
-                        if (dis[dest][i] > dis[dest][j]) {
-                            int temp = dis[dest][i];
-                            dis[dest][i] = dis[dest][j];
-                            dis[dest][j] = temp;
-                        }
-                    }
-                }
-
-                // Pushing elements to priority queue
-                pq[pq_size++] = (pair){ (d + cost), dest };
-            }
-            current = current->next;
-        }
-    }
-
-    // Printing K shortest paths
-    for (int i = 0; i < k; i++) {
-        if (dis[destNode][i] == 1e9) {
-            printf("INF ");
-        }
-        else {
-            printf("%d ", dis[destNode][i]);
-        }
-    }
-
-    // Free allocated memory
-    for (int i = 0; i <= n; i++) {
-        free(dis[i]);
-    }
-
-    free(dis);
-    free(pq);
-
-    for (int i = 0; i <= n; i++) {
-        struct Node* current = g[i];
-        while (current != NULL) {
-            struct Node* temp = current;
-            current = current->next;
-            free(temp);
-        }
-    }
-    free(g);
-}
+#include <time.h> // Time Library
+#include "functions.h" // Functions for finding K shortest paths
 
 int main() {
     // Number of nodes and edges
@@ -140,12 +11,8 @@ int main() {
     // Number of shortest paths
     const int K = 4;
 
-    // Source and destination nodes
-    int srcNode = 0;
-    int destNode = 20000;
-
     // Reading the graph from a file
-    FILE* fp = fopen("datasets/Email-Enron.txt", "r");
+    FILE* fp = fopen("datasets/Email-EuAll.txt", "r");
     if (fp == NULL) {
         printf("Error opening file.\n");
         return 1;
@@ -193,13 +60,59 @@ int main() {
     //    printf("%d %d %d\n", edges[i][0], edges[i][1], edges[i][2]);
     //}
 
-    printf("\nFile Reading Done\n");
-    printf("K shortest paths from %d to %d are: ", srcNode, destNode);
-    // Find K shortest paths => Function Call
-    findKShortest(edges, N, M, K, srcNode, destNode);
-    printf("\nDone");
+    printf("\nFile Reading Done");
 
-    free(edges);
+    // Initialize graph
+    struct Node** g = (struct Node**)malloc((N + 1) * sizeof(struct Node*));
+    // Initialize adjacency list
+    for (int i = 0; i <= N; i++) {
+        g[i] = NULL; // Initialize all nodes to NULL
+    }
+
+    // Storing edges
+    for (int i = 0; i < M; i++) {
+        int src = edges[i][0];
+        int dest = edges[i][1];
+        int cost = edges[i][2];
+        struct Node* newNode = createNode(dest, cost);
+        newNode->next = g[src]; // Adding the new node to the adjacency list
+        g[src] = newNode; // Updating the adjacency list
+    }
+    printf("\nGraph Creation Done\n\n");
+    free(edges); // Free the allocated memory
+
+    const int totalPairs = 10;
+    int pairs[10][2];
+    for (int i = 0; i < totalPairs; i++) {
+        pairs[i][0] = rand() % N;
+        do {
+            pairs[i][1] = rand() % N;
+        } while (pairs[i][1] == pairs[i][0]);
+    }
+
+    clock_t start_s = clock(); // Start the clock
+    // Find K shortest paths => Function Call
+    for(int i = 0; i < totalPairs; i++) {
+		int srcNode = pairs[i][0];
+		int destNode = pairs[i][1];
+        printf("K shortest paths from %d to %d are: ", srcNode, destNode);
+		findKShortest(g, N, M, K, srcNode, destNode);
+	}
+    clock_t stop_s = clock(); // Stop the clock
+
+    // Calculate the time taken
+    printf("\n\nTime Taken: %.8fs\n", (stop_s - start_s) / (double)(CLOCKS_PER_SEC));
+
+    // De-Allocating the Memory
+    for (int i = 0; i <= N; i++) {
+        struct Node* current = g[i];
+        while (current != NULL) {
+            struct Node* temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+    free(g);
 
     return 0;
 }

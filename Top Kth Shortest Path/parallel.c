@@ -1,140 +1,9 @@
 
 
+
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-// Structure to represent a node in the graph
-struct Node {
-    int dest; // Destination node
-    int cost; // Cost of the edge
-    struct Node* next; // Pointer to the next node
-};
-
-// Function to create a new node
-struct Node* createNode(int dest, int cost) {
-    // Allocating memory for the new node
-    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-
-    newNode->dest = dest;
-    newNode->cost = cost;
-    newNode->next = NULL;
-    return newNode;
-}
-
-// Function to find K shortest path lengths
-void findKShortest(int edges[][3], int n, int m, int k, int srcNode, int destNode) {
-    // Initialize graph
-    struct Node** g = (struct Node**)malloc((n + 1) * sizeof(struct Node*));
-    // Initialize adjacency list
-    for (int i = 0; i <= n; i++) {
-        g[i] = NULL; // Initialize all nodes to NULL
-    }
-
-    // Storing edges
-    for (int i = 0; i < m; i++) {
-        int src = edges[i][0];
-        int dest = edges[i][1];
-        int cost = edges[i][2];
-        struct Node* newNode = createNode(dest, cost);
-        newNode->next = g[src]; // Adding the new node to the adjacency list
-        g[src] = newNode; // Updating the adjacency list
-    }
-
-    // Initialize distance array
-    int** dis = (int**)malloc((n + 1) * sizeof(int*));
-    for (int i = 0; i <= n; i++) {
-        dis[i] = (int*)malloc(k * sizeof(int));
-        for (int j = 0; j < k; j++) {
-            dis[i][j] = 1e9;
-        }
-    }
-
-    // Initialization of priority queue
-    typedef struct {
-        int first;
-        int second;
-    } pair;
-
-    // Priority queue
-    pair* pq = (pair*)malloc(n * n * sizeof(pair));
-    int pq_size = 0; // Size of the priority queue
-    pq[pq_size++] = (pair){ 0, srcNode };
-    dis[srcNode][0] = 0; // Distance of the source node is 0
-
-    // while pq has elements
-    while (pq_size > 0) {
-        // Storing the node value
-        int u = pq[0].second; // Node value
-        int d = pq[0].first; // Distance value
-
-        for (int i = 0; i < pq_size - 1; i++) {
-            pq[i] = pq[i + 1];
-        }
-        pq_size--;
-
-        // Checking for the distance
-        if (dis[u][k - 1] < d)
-            continue;
-
-        struct Node* current = g[u];
-
-        // Traversing the adjacency list
-        while (current != NULL) {
-            int dest = current->dest;
-            int cost = current->cost;
-
-            // Checking for the cost
-            if (d + cost < dis[dest][k - 1]) {
-                dis[dest][k - 1] = d + cost;
-
-                // Sorting the distances
-                for (int i = 0; i < k; i++) {
-                    for (int j = i + 1; j < k; j++) {
-                        if (dis[dest][i] > dis[dest][j]) {
-                            int temp = dis[dest][i];
-                            dis[dest][i] = dis[dest][j];
-                            dis[dest][j] = temp;
-                        }
-                    }
-                }
-
-                // Pushing elements to priority queue
-                pq[pq_size++] = (pair){ (d + cost), dest };
-            }
-            current = current->next;
-        }
-    }
-
-    // Printing K shortest paths
-    for (int i = 0; i < k; i++) {
-        if (dis[destNode][i] == 1e9) {
-            printf("INF ");
-        }
-        else {
-            printf("%d ", dis[destNode][i]);
-        }
-    }
-
-    // Free allocated memory
-    for (int i = 0; i <= n; i++) {
-        free(dis[i]);
-    }
-
-    free(dis);
-    free(pq);
-
-    for (int i = 0; i <= n; i++) {
-        struct Node* current = g[i];
-        while (current != NULL) {
-            struct Node* temp = current;
-            current = current->next;
-            free(temp);
-        }
-    }
-    free(g);
-}
+#include <mpi.h> // MPI library
+#include "functions.h" // Functions for finding K shortest paths
 
 // Main function
 int main(int argc, char* argv[]) {
@@ -159,20 +28,20 @@ int main(int argc, char* argv[]) {
     int(*edges)[3] = NULL;
     if (rank == 0) {
         FILE* fp = fopen("Email-EuAll.txt", "r");
-        if (fp == NULL) {
-            printf("Error opening file.\n");
-            MPI_Abort(MPI_COMM_WORLD, 1); // Exit all processes if file opening fails
+        if (!fp) {
+            fprintf(stderr, "Error opening file on rank %d.\n", rank);
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
         if (fscanf(fp, "Nodes: %d Edges: %d", &N, &M) != 2) {
-            printf("Error reading the number of nodes and edges.\n");
+            fprintf(stderr, "Error reading header on rank %d.\n", rank);
             fclose(fp);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
 
         // Allocate memory for edges
         edges = malloc(M * sizeof(*edges));
         if (edges == NULL) {
-            printf("Memory allocation failed.\n");
+            fprintf(stderr, "Memory allocation failed on rank %d.\n", rank);
             fclose(fp);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
@@ -208,7 +77,7 @@ int main(int argc, char* argv[]) {
     if (rank != 0) {
         edges = malloc(M * sizeof(*edges));
         if (edges == NULL) {
-            printf("Memory allocation failed on rank %d.\n", rank);
+            fprintf(stderr, "Memory allocation failed on rank %d.\n", rank);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -216,11 +85,11 @@ int main(int argc, char* argv[]) {
     // Broadcast edges to all processes
     MPI_Bcast(edges, M * 3, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Generate 10 random pairs
-    const int total_pairs = 10;
+    // Generate 10 random pairs, making sure src and dest are different
+    const int totalPairs = 10;
     int pairs[10][2];
     if (rank == 0) {
-        for (int i = 0; i < total_pairs; i++) {
+        for (int i = 0; i < totalPairs; i++) {
             pairs[i][0] = rand() % N;
             do { 
                 pairs[i][1] = rand() % N;
@@ -233,43 +102,82 @@ int main(int argc, char* argv[]) {
     int* displs = malloc(size * sizeof(int));
     int sum = 0;
     for (int i = 0; i < size; i++) {
-        sendCounts[i] = (i < total_pairs % size) ? (total_pairs / size + 1) * 2 : (total_pairs / size) * 2;
+        sendCounts[i] = (i < totalPairs % size) ? (totalPairs / size + 1) * 2 : (totalPairs / size) * 2;
         displs[i] = sum;
         sum += sendCounts[i];
     }
 
     // Allocate memory for local pairs on each process
-    int local_pairs_count = sendCounts[rank] / 2;
-    int(*local_pairs)[2] = malloc(local_pairs_count * sizeof(*local_pairs));
+    int localPairsCount = sendCounts[rank] / 2;
+    int(*localPairs)[2] = malloc(localPairsCount * sizeof(*localPairs));
+
 
     // Scatter the pairs to all processes
-    MPI_Scatterv(pairs, sendCounts, displs, MPI_INT, local_pairs, sendCounts[rank], MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(pairs, sendCounts, displs, MPI_INT, localPairs, sendCounts[rank], MPI_INT, 0, MPI_COMM_WORLD);
 
-    printf("Processor %s, rank %d out of %d, handling %d pairs\n",
-        processorName, rank, size, local_pairs_count);
 
-    double start_time, end_time;
-    start_time = MPI_Wtime();
-
-    for (int i = 0; i < local_pairs_count; i++) {
-        printf("Processor %s, rank %d has pair (%d, %d)\n",
-            processorName, rank, local_pairs[i][0], local_pairs[i][1]);
-
-        // Find K shortest paths for each pair
-        findKShortest(edges, N, M, K, local_pairs[i][0], local_pairs[i][1]);
-    }
-
-    end_time = MPI_Wtime();
-
-    free(edges);
+    // De-Allocating the Memory
     free(sendCounts);
     free(displs);
-    free(local_pairs);
+
+    printf("Processor %s, rank %d out of %d, handling %d pairs\n",
+        processorName, rank, size, localPairsCount);
+
+    // Each process will construct the graph
+    // Initialize graph
+    struct Node** g = (struct Node**)malloc((N + 1) * sizeof(struct Node*));
+    // Initialize adjacency list
+    for (int i = 0; i <= N; i++) {
+        g[i] = NULL; // Initialize all nodes to NULL
+    }
+
+    // Storing edges, T.C: O(M)
+    for (int i = 0; i < M; i++) {
+        int src = edges[i][0];
+        int dest = edges[i][1];
+        int cost = edges[i][2];
+        struct Node* newNode = createNode(dest, cost);
+        newNode->next = g[src]; // Adding the new node to the adjacency list
+        g[src] = newNode; // Updating the adjacency list
+    }
+
+    printf("Processor %s, rank %d out of %d, graph creation done\n",
+		processorName, rank, size);
+    // De-Allocating the Memory
+    free(edges);
+
+    double start_s, stop_s;
+    start_s = MPI_Wtime();
+
+    // if the local_pairs_count is > 1 then make threads
+    for (int i = 0; i < localPairsCount; i++) {
+        printf("Processor %s, rank %d has pair (%d, %d)\n",
+            processorName, rank, localPairs[i][0], localPairs[i][1]);
+
+        // Find K shortest paths for each pair
+        findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
+    }
+
+    stop_s = MPI_Wtime();
+
+    // De-Allocating the Memory
+    for (int i = 0; i <= N; i++) {
+        struct Node* current = g[i];
+        while (current != NULL) {
+            struct Node* temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+    free(g);
+
+    free(localPairs);
 
     if (rank == 0)
-        printf("Time taken for execution: %.8f seconds\n\n", end_time - start_time);
+        printf("\nTime taken for execution: %.8f seconds\n\n", stop_s - start_s);
 
     MPI_Finalize();
     return 0;
 }
+
 
