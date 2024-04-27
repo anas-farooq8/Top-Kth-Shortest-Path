@@ -150,25 +150,13 @@ int main(int argc, char* argv[]) {
 
     int i;
     // Check if there are multiple pairs to process and use OpenMP to parallelize
-    if (localPairsCount > 1) {
-        #pragma omp parallel for num_threads(localPairsCount)
-        for (i = 0; i < localPairsCount; i++) {
-            printf("Processor %s, rank %d, thread %d has pair (%d, %d)\n",
-                processorName, rank, omp_get_thread_num(), localPairs[i][0], localPairs[i][1]);
+#pragma omp parallel for if(localPairsCount > 1) num_threads(localPairsCount)
+    for (i = 0; i < localPairsCount; i++) {
+        printf("Processor %s, rank %d, thread %d has pair (%d, %d)\n",
+            processorName, rank, omp_get_thread_num(), localPairs[i][0], localPairs[i][1]);
 
-            // Find K shortest paths for each pair
-            findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
-        }
-    }
-    else {
-        // If less than 2 pairs, then execute in serial
-        for (int i = 0; i < localPairsCount; i++) {
-            printf("Processor %s, rank %d has pair (%d, %d) - single thread\n",
-                processorName, rank, localPairs[i][0], localPairs[i][1]);
-
-            // Find K shortest paths for each pair
-            findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
-        }
+        // Find K shortest paths for each pair
+        findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
     }
 
     stop_s = MPI_Wtime();
