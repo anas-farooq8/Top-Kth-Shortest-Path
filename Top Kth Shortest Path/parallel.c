@@ -3,6 +3,7 @@
 
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
 #include <mpi.h> // MPI library
+#include <omp.h> // OpenMP library
 #include "functions.h" // Functions for finding K shortest paths
 
 // Main function
@@ -141,21 +142,33 @@ int main(int argc, char* argv[]) {
         g[src] = newNode; // Updating the adjacency list
     }
 
-    printf("Processor %s, rank %d out of %d, graph creation done\n",
-		processorName, rank, size);
     // De-Allocating the Memory
     free(edges);
 
     double start_s, stop_s;
     start_s = MPI_Wtime();
 
-    // if the local_pairs_count is > 1 then make threads
-    for (int i = 0; i < localPairsCount; i++) {
-        printf("Processor %s, rank %d has pair (%d, %d)\n",
-            processorName, rank, localPairs[i][0], localPairs[i][1]);
+    int i;
+    // Check if there are multiple pairs to process and use OpenMP to parallelize
+    if (localPairsCount > 1) {
+        #pragma omp parallel for num_threads(localPairsCount)
+        for (i = 0; i < localPairsCount; i++) {
+            printf("Processor %s, rank %d, thread %d has pair (%d, %d)\n",
+                processorName, rank, omp_get_thread_num(), localPairs[i][0], localPairs[i][1]);
 
-        // Find K shortest paths for each pair
-        findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
+            // Find K shortest paths for each pair
+            findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
+        }
+    }
+    else {
+        // If less than 2 pairs, then execute in serial
+        for (int i = 0; i < localPairsCount; i++) {
+            printf("Processor %s, rank %d has pair (%d, %d) - single thread\n",
+                processorName, rank, localPairs[i][0], localPairs[i][1]);
+
+            // Find K shortest paths for each pair
+            findKShortest(g, N, M, K, localPairs[i][0], localPairs[i][1]);
+        }
     }
 
     stop_s = MPI_Wtime();
