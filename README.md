@@ -28,6 +28,11 @@ cd Top-Kth-Shortest-Path
 ## Execution
 `mpiexec -n 4 -f machinefile ./parallel`
 
+## Report
+![Report_page-0001](https://github.com/anas-farooq8/Top-Kth-Shortest-Path/assets/150327092/deef91ad-9c0a-401b-88e3-571676835d3c)
+![Report_page-0002](https://github.com/anas-farooq8/Top-Kth-Shortest-Path/assets/150327092/140a71e4-f5b6-43e6-996f-5bc13965e22c)
+![Report_page-0003](https://github.com/anas-farooq8/Top-Kth-Shortest-Path/assets/150327092/1db9d57e-c1ab-4ce0-8aea-654e07cbbeae)
+![Report_page-0004](https://github.com/anas-farooq8/Top-Kth-Shortest-Path/assets/150327092/546a906d-31f4-4066-bfcb-d793a55964c5)
 
 ### Additional Notes:
 - Make sure to provide a `machinefile` example or instructions on how to create one if your target users may not be familiar with this setup.
