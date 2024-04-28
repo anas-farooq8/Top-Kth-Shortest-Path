@@ -1,5 +1,3 @@
-
-
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
 #include <mpi.h> // MPI library
 #include <omp.h> // OpenMP library
@@ -260,5 +258,3 @@ int main(int argc, char* argv[]) {
     MPI_Finalize();
     return 0;
 }
-
-
