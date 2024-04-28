@@ -1,6 +1,3 @@
-/*
-
-
 #define _CRT_SECURE_NO_DEPRECATE // To suppress the warning for fopen
 #include <time.h> // Time Library
 #include "functions.h" // Functions for finding K shortest paths
@@ -184,7 +181,3 @@ int main() {
 
 // Time Complexity : O((N + M)* KlogK)
 // Auxiliary Space : O(NK)
-
-
-
-*/
